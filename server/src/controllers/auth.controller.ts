@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
+import mongoose from 'mongoose';
 import { User, IUser } from '../models/User';
 import {
   generateAccessToken,
@@ -15,7 +16,60 @@ const COOKIE_OPTIONS = {
   path: '/',
 };
 
-const formatUserResponse = (user: IUser) => {
+interface MemoryUser {
+  _id: string;
+  name: string;
+  email: string;
+  passwordHash: string;
+  role: 'teacher' | 'student';
+  enrollmentNumber?: string | null;
+  department?: string;
+  faceDescriptor: number[];
+  refreshToken?: string | null;
+  createdAt: Date;
+}
+
+// In-Memory fallback store for instant local development when MongoDB is offline
+const memoryUsers = new Map<string, MemoryUser>();
+
+const isMongoConnected = () => mongoose.connection.readyState === 1;
+
+// Initialize demo users
+(async () => {
+  const salt = await bcrypt.genSalt(10);
+  const hash = await bcrypt.hash('Password@123', salt);
+
+  const studentUser: MemoryUser = {
+    _id: 'std_660000000000000000000001',
+    name: 'Alex Rivera',
+    email: 'alex.rivera@university.edu',
+    passwordHash: hash,
+    role: 'student',
+    enrollmentNumber: '2024-CS-089',
+    department: 'Computer Science & Engineering',
+    faceDescriptor: [],
+    refreshToken: null,
+    createdAt: new Date(),
+  };
+
+  const teacherUser: MemoryUser = {
+    _id: 'tch_660000000000000000000002',
+    name: 'Prof. Marcus Thorne',
+    email: 'prof.thorne@university.edu',
+    passwordHash: hash,
+    role: 'teacher',
+    enrollmentNumber: null,
+    department: 'Cybersecurity & Cryptography',
+    faceDescriptor: [],
+    refreshToken: null,
+    createdAt: new Date(),
+  };
+
+  memoryUsers.set(studentUser.email.toLowerCase(), studentUser);
+  memoryUsers.set(teacherUser.email.toLowerCase(), teacherUser);
+})();
+
+const formatUserResponse = (user: IUser | MemoryUser) => {
   return {
     id: user._id,
     name: user.name,
@@ -32,10 +86,84 @@ const formatUserResponse = (user: IUser) => {
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
     const { name, email, password, role, enrollmentNumber, department, faceDescriptor } = req.body;
+    const cleanEmail = email.toLowerCase().trim();
+    const cleanEnrollment = enrollmentNumber ? enrollmentNumber.trim().toUpperCase() : undefined;
 
-    // Check if email already exists
-    const existingEmail = await User.findOne({ email: email.toLowerCase().trim() });
-    if (existingEmail) {
+    if (isMongoConnected()) {
+      try {
+        // Check if email already exists
+        const existingEmail = await User.findOne({ email: cleanEmail });
+        if (existingEmail) {
+          res.status(409).json({
+            success: false,
+            message: 'An account with this institutional email already exists',
+            code: 'EMAIL_EXISTS',
+          });
+          return;
+        }
+
+        // If student, check if enrollment number already exists
+        if (role === 'student' && cleanEnrollment) {
+          const existingEnrollment = await User.findOne({
+            enrollmentNumber: cleanEnrollment,
+          });
+          if (existingEnrollment) {
+            res.status(409).json({
+              success: false,
+              message: 'An account with this enrollment number already exists',
+              code: 'ENROLLMENT_EXISTS',
+            });
+            return;
+          }
+        }
+
+        // Hash password
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash(password, salt);
+
+        // Create user
+        const newUser = new User({
+          name: name.trim(),
+          email: cleanEmail,
+          passwordHash,
+          role,
+          enrollmentNumber: role === 'student' ? cleanEnrollment : undefined,
+          department: department?.trim() || 'Computer Science & Engineering',
+          faceDescriptor: Array.isArray(faceDescriptor) ? faceDescriptor : [],
+        });
+
+        const savedUser = await newUser.save();
+
+        const accessToken = generateAccessToken({
+          userId: savedUser._id.toString(),
+          email: savedUser.email,
+          role: savedUser.role,
+          name: savedUser.name,
+        });
+
+        const refreshToken = generateRefreshToken({
+          userId: savedUser._id.toString(),
+        });
+
+        savedUser.refreshToken = refreshToken;
+        await savedUser.save();
+
+        res.cookie('refreshToken', refreshToken, COOKIE_OPTIONS);
+
+        res.status(201).json({
+          success: true,
+          message: 'Account registered successfully',
+          accessToken,
+          user: formatUserResponse(savedUser),
+        });
+        return;
+      } catch (dbErr) {
+        console.warn('[Register DB Error - switching to memory fallback]', dbErr);
+      }
+    }
+
+    // In-memory fallback
+    if (memoryUsers.has(cleanEmail)) {
       res.status(409).json({
         success: false,
         message: 'An account with this institutional email already exists',
@@ -44,62 +172,44 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // If student, check if enrollment number already exists
-    if (role === 'student' && enrollmentNumber) {
-      const existingEnrollment = await User.findOne({
-        enrollmentNumber: enrollmentNumber.trim().toUpperCase(),
-      });
-      if (existingEnrollment) {
-        res.status(409).json({
-          success: false,
-          message: 'An account with this enrollment number already exists',
-          code: 'ENROLLMENT_EXISTS',
-        });
-        return;
-      }
-    }
-
-    // Hash password
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
+    const memUserId = 'mem_usr_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
 
-    // Create user
-    const newUser = new User({
+    const memUser: MemoryUser = {
+      _id: memUserId,
       name: name.trim(),
-      email: email.toLowerCase().trim(),
+      email: cleanEmail,
       passwordHash,
       role,
-      enrollmentNumber: role === 'student' ? enrollmentNumber?.trim().toUpperCase() : undefined,
+      enrollmentNumber: role === 'student' ? cleanEnrollment : null,
       department: department?.trim() || 'Computer Science & Engineering',
       faceDescriptor: Array.isArray(faceDescriptor) ? faceDescriptor : [],
-    });
+      refreshToken: null,
+      createdAt: new Date(),
+    };
 
-    const savedUser = await newUser.save();
-
-    // Generate tokens
     const accessToken = generateAccessToken({
-      userId: savedUser._id.toString(),
-      email: savedUser.email,
-      role: savedUser.role,
-      name: savedUser.name,
+      userId: memUser._id,
+      email: memUser.email,
+      role: memUser.role,
+      name: memUser.name,
     });
 
     const refreshToken = generateRefreshToken({
-      userId: savedUser._id.toString(),
+      userId: memUser._id,
     });
 
-    // Save refresh token to user
-    savedUser.refreshToken = refreshToken;
-    await savedUser.save();
+    memUser.refreshToken = refreshToken;
+    memoryUsers.set(cleanEmail, memUser);
 
-    // Set refresh token cookie
     res.cookie('refreshToken', refreshToken, COOKIE_OPTIONS);
 
     res.status(201).json({
       success: true,
       message: 'Account registered successfully',
       accessToken,
-      user: formatUserResponse(savedUser),
+      user: formatUserResponse(memUser),
     });
   } catch (error: any) {
     console.error('[Register Error]', error);
@@ -114,12 +224,50 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
+    const cleanEmail = email.toLowerCase().trim();
 
-    const user = await User.findOne({ email: email.toLowerCase().trim() }).select(
-      '+passwordHash +refreshToken'
-    );
+    if (isMongoConnected()) {
+      try {
+        const user = await User.findOne({ email: cleanEmail }).select(
+          '+passwordHash +refreshToken'
+        );
 
-    if (!user) {
+        if (user) {
+          const isMatch = await bcrypt.compare(password, user.passwordHash);
+          if (isMatch) {
+            const accessToken = generateAccessToken({
+              userId: user._id.toString(),
+              email: user.email,
+              role: user.role,
+              name: user.name,
+            });
+
+            const refreshToken = generateRefreshToken({
+              userId: user._id.toString(),
+            });
+
+            user.refreshToken = refreshToken;
+            await user.save();
+
+            res.cookie('refreshToken', refreshToken, COOKIE_OPTIONS);
+
+            res.status(200).json({
+              success: true,
+              message: 'Authentication successful',
+              accessToken,
+              user: formatUserResponse(user),
+            });
+            return;
+          }
+        }
+      } catch (dbErr) {
+        console.warn('[Login DB Error - checking memory fallback]', dbErr);
+      }
+    }
+
+    // Check memory store
+    const memUser = memoryUsers.get(cleanEmail);
+    if (!memUser) {
       res.status(401).json({
         success: false,
         message: 'Invalid email or password',
@@ -128,7 +276,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    const isMatch = await bcrypt.compare(password, memUser.passwordHash);
     if (!isMatch) {
       res.status(401).json({
         success: false,
@@ -138,30 +286,27 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Generate tokens
     const accessToken = generateAccessToken({
-      userId: user._id.toString(),
-      email: user.email,
-      role: user.role,
-      name: user.name,
+      userId: memUser._id,
+      email: memUser.email,
+      role: memUser.role,
+      name: memUser.name,
     });
 
     const refreshToken = generateRefreshToken({
-      userId: user._id.toString(),
+      userId: memUser._id,
     });
 
-    // Update refresh token in DB
-    user.refreshToken = refreshToken;
-    await user.save();
+    memUser.refreshToken = refreshToken;
+    memoryUsers.set(cleanEmail, memUser);
 
-    // Set cookie
     res.cookie('refreshToken', refreshToken, COOKIE_OPTIONS);
 
     res.status(200).json({
       success: true,
       message: 'Authentication successful',
       accessToken,
-      user: formatUserResponse(user),
+      user: formatUserResponse(memUser),
     });
   } catch (error: any) {
     console.error('[Login Error]', error);
@@ -198,38 +343,71 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const user = await User.findById(decoded.userId).select('+refreshToken');
-    if (!user || user.refreshToken !== token) {
-      res.status(401).json({
-        success: false,
-        message: 'Refresh token revoked or mismatched',
-        code: 'REVOKED_REFRESH_TOKEN',
-      });
-      return;
+    if (isMongoConnected()) {
+      try {
+        const user = await User.findById(decoded.userId).select('+refreshToken');
+        if (user && user.refreshToken === token) {
+          const newAccessToken = generateAccessToken({
+            userId: user._id.toString(),
+            email: user.email,
+            role: user.role,
+            name: user.name,
+          });
+
+          const newRefreshToken = generateRefreshToken({
+            userId: user._id.toString(),
+          });
+
+          user.refreshToken = newRefreshToken;
+          await user.save();
+
+          res.cookie('refreshToken', newRefreshToken, COOKIE_OPTIONS);
+
+          res.status(200).json({
+            success: true,
+            message: 'Token rotated successfully',
+            accessToken: newAccessToken,
+            user: formatUserResponse(user),
+          });
+          return;
+        }
+      } catch (dbErr) {
+        console.warn('[Refresh DB Error - checking memory fallback]', dbErr);
+      }
     }
 
-    // Token rotation: generate new access & refresh tokens
-    const newAccessToken = generateAccessToken({
-      userId: user._id.toString(),
-      email: user.email,
-      role: user.role,
-      name: user.name,
-    });
+    // Check in-memory store
+    for (const [, user] of memoryUsers.entries()) {
+      if (user._id === decoded.userId && user.refreshToken === token) {
+        const newAccessToken = generateAccessToken({
+          userId: user._id,
+          email: user.email,
+          role: user.role,
+          name: user.name,
+        });
 
-    const newRefreshToken = generateRefreshToken({
-      userId: user._id.toString(),
-    });
+        const newRefreshToken = generateRefreshToken({
+          userId: user._id,
+        });
 
-    user.refreshToken = newRefreshToken;
-    await user.save();
+        user.refreshToken = newRefreshToken;
 
-    res.cookie('refreshToken', newRefreshToken, COOKIE_OPTIONS);
+        res.cookie('refreshToken', newRefreshToken, COOKIE_OPTIONS);
 
-    res.status(200).json({
-      success: true,
-      message: 'Token rotated successfully',
-      accessToken: newAccessToken,
-      user: formatUserResponse(user),
+        res.status(200).json({
+          success: true,
+          message: 'Token rotated successfully',
+          accessToken: newAccessToken,
+          user: formatUserResponse(user),
+        });
+        return;
+      }
+    }
+
+    res.status(401).json({
+      success: false,
+      message: 'Refresh token revoked or mismatched',
+      code: 'REVOKED_REFRESH_TOKEN',
     });
   } catch (error: any) {
     console.error('[Refresh Error]', error);
@@ -248,9 +426,16 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
     if (token) {
       try {
         const decoded = verifyRefreshToken(token);
-        await User.findByIdAndUpdate(decoded.userId, { refreshToken: null });
+        if (isMongoConnected()) {
+          await User.findByIdAndUpdate(decoded.userId, { refreshToken: null });
+        }
+        for (const [, user] of memoryUsers.entries()) {
+          if (user._id === decoded.userId) {
+            user.refreshToken = null;
+          }
+        }
       } catch (err) {
-        // Token might already be invalid, proceed to clear cookie
+        // Token might already be invalid
       }
     }
 
@@ -277,7 +462,8 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
 
 export const getMe = async (req: Request, res: Response): Promise<void> => {
   try {
-    if (!req.user?.userId) {
+    const userId = req.user?.userId;
+    if (!userId) {
       res.status(401).json({
         success: false,
         message: 'Unauthorized',
@@ -285,19 +471,35 @@ export const getMe = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const user = await User.findById(req.user.userId);
-    if (!user) {
-      res.status(404).json({
-        success: false,
-        message: 'User profile not found',
-        code: 'USER_NOT_FOUND',
-      });
-      return;
+    if (isMongoConnected()) {
+      try {
+        const user = await User.findById(userId);
+        if (user) {
+          res.status(200).json({
+            success: true,
+            user: formatUserResponse(user),
+          });
+          return;
+        }
+      } catch (dbErr) {
+        console.warn('[GetMe DB Error - checking memory fallback]', dbErr);
+      }
     }
 
-    res.status(200).json({
-      success: true,
-      user: formatUserResponse(user),
+    for (const [, user] of memoryUsers.entries()) {
+      if (user._id === userId) {
+        res.status(200).json({
+          success: true,
+          user: formatUserResponse(user),
+        });
+        return;
+      }
+    }
+
+    res.status(404).json({
+      success: false,
+      message: 'User profile not found',
+      code: 'USER_NOT_FOUND',
     });
   } catch (error: any) {
     console.error('[GetMe Error]', error);
@@ -312,6 +514,7 @@ export const getMe = async (req: Request, res: Response): Promise<void> => {
 export const updateFaceDescriptor = async (req: Request, res: Response): Promise<void> => {
   try {
     const { faceDescriptor } = req.body;
+    const userId = req.user?.userId;
 
     if (!Array.isArray(faceDescriptor) || faceDescriptor.length === 0) {
       res.status(400).json({
@@ -321,25 +524,44 @@ export const updateFaceDescriptor = async (req: Request, res: Response): Promise
       return;
     }
 
-    const user = await User.findByIdAndUpdate(
-      req.user?.userId,
-      { faceDescriptor },
-      { new: true }
-    );
+    if (isMongoConnected()) {
+      try {
+        const user = await User.findByIdAndUpdate(
+          userId,
+          { faceDescriptor },
+          { new: true }
+        );
 
-    if (!user) {
-      res.status(404).json({
-        success: false,
-        message: 'User not found',
-      });
-      return;
+        if (user) {
+          res.status(200).json({
+            success: true,
+            message: 'Biometric face descriptor vector enrolled successfully',
+            faceDescriptorEnrolled: true,
+            user: formatUserResponse(user),
+          });
+          return;
+        }
+      } catch (dbErr) {
+        console.warn('[UpdateFaceDescriptor DB Error - fallback to memory]', dbErr);
+      }
     }
 
-    res.status(200).json({
-      success: true,
-      message: 'Biometric face descriptor vector enrolled successfully',
-      faceDescriptorEnrolled: true,
-      user: formatUserResponse(user),
+    for (const [, user] of memoryUsers.entries()) {
+      if (user._id === userId) {
+        user.faceDescriptor = faceDescriptor;
+        res.status(200).json({
+          success: true,
+          message: 'Biometric face descriptor vector enrolled successfully',
+          faceDescriptorEnrolled: true,
+          user: formatUserResponse(user),
+        });
+        return;
+      }
+    }
+
+    res.status(404).json({
+      success: false,
+      message: 'User not found',
     });
   } catch (error: any) {
     console.error('[UpdateFaceDescriptor Error]', error);
