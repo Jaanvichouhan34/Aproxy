@@ -27,54 +27,61 @@ Traditional QR-code attendance systems fail because students easily take screens
 
 ## 🖼️ System UI & Feature Gallery
 
-### 📊 Dashboard & Command Center Views (3 Per Row Layout)
+### 📊 Dashboard & System Views
 
 <table>
   <tr>
     <td width="33%" align="center">
-      <img src="docs/assets/teacher.png" alt="Teacher Overview Dashboard" width="100%"/>
+      <img src="docs/assets/2.png" alt="Preview 2" width="100%"/>
       <br/>
-      <sub><b>Teacher Overview Dashboard</b></sub>
+      <sub><b>Preview 2</b></sub>
     </td>
     <td width="33%" align="center">
-      <img src="docs/assets/teacher_2.png" alt="Teacher Live Roster & Analytics" width="100%"/>
+      <img src="docs/assets/3.png" alt="Preview 3" width="100%"/>
       <br/>
-      <sub><b>Live Roster & Analytics</b></sub>
+      <sub><b>Preview 3</b></sub>
     </td>
     <td width="33%" align="center">
-      <img src="docs/assets/3.png" alt="Smart Timetable & Class Schedule" width="100%"/>
+      <img src="docs/assets/5.png" alt="Preview 5" width="100%"/>
       <br/>
-      <sub><b>Smart Timetable Engine</b></sub>
+      <sub><b>Preview 5</b></sub>
     </td>
   </tr>
   <tr>
     <td width="33%" align="center">
-      <img src="docs/assets/2.png" alt="Student Attendance Hub" width="100%"/>
+      <img src="docs/assets/teacher.png" alt="Teacher Dashboard 1" width="100%"/>
       <br/>
-      <sub><b>Student Attendance Hub</b></sub>
+      <sub><b>Teacher Dashboard 1</b></sub>
     </td>
     <td width="33%" align="center">
-      <img src="docs/assets/4.png" alt="Security Architecture Deep-Dive" width="100%"/>
+      <img src="docs/assets/teacher_2.png" alt="Teacher Dashboard 2" width="100%"/>
       <br/>
-      <sub><b>Security Architecture Deep-Dive</b></sub>
+      <sub><b>Teacher Dashboard 2</b></sub>
     </td>
     <td width="33%" align="center">
-      <img src="docs/assets/5.png" alt="Anti-Proxy Security Analytics" width="100%"/>
+      <img src="docs/assets/8.png" alt="Preview 8" width="100%"/>
       <br/>
-      <sub><b>Anti-Proxy Security Analytics</b></sub>
+      <sub><b>Preview 8</b></sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="33%" align="center">
+      <img src="docs/assets/1.png" alt="Preview 1" width="100%"/>
+      <br/>
+      <sub><b>Preview 1</b></sub>
+    </td>
+    <td width="33%" align="center">
+      <img src="docs/assets/7.png" alt="Preview 7" width="100%"/>
+      <br/>
+      <sub><b>Preview 7</b></sub>
+    </td>
+    <td width="33%" align="center">
+      <img src="docs/assets/4.png" alt="Preview 4" width="100%"/>
+      <br/>
+      <sub><b>Preview 4</b></sub>
     </td>
   </tr>
 </table>
-
-<br/>
-
-### 📱 Student Verification & Camera Scanner (Compact View)
-
-<p align="center">
-  <img src="docs/assets/1.png" alt="Student Biometric Verification & Camera Scanner" width="380" style="border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);" />
-  <br/>
-  <sub><b>Student Live Face ID Verification & Dynamic QR Scanner</b></sub>
-</p>
 
 ---
 
@@ -195,13 +202,15 @@ Traditional QR-code attendance systems fail because students easily take screens
 Aproxy/
 ├── docs/                         # Project Documentation & Screenshots
 │   └── assets/                   # System Screenshots & UI Mockups
-│       ├── 1.png                 # Student Verification (Compact Mobile View)
-│       ├── 2.png                 # Student Attendance Hub
-│       ├── 3.png                 # Smart Timetable Engine
-│       ├── 4.png                 # Security Architecture Deep-Dive
-│       ├── teacher.png           # Teacher Overview Dashboard
-│       ├── teacher_2.png         # Live Roster & Analytics
-│       └── security_threat_matrix.jpg
+│       ├── 1.png
+│       ├── 2.png
+│       ├── 3.png
+│       ├── 4.png
+│       ├── 5.png
+│       ├── 7.png
+│       ├── 8.png
+│       ├── teacher.png
+│       └── teacher_2.png
 ├── server/                       # Express Backend Service
 │   ├── src/
 │   │   ├── config/               # DB connection & environment variables
