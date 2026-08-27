@@ -105,9 +105,9 @@ export function extractLivenessMetrics(
   const rightEAR = calculateEyeAspectRatio(rightEyePoints);
   const avgEAR = (leftEAR + rightEAR) / 2.0;
 
-  // Blink state machine: EAR drops below 0.22 when closed, rises above 0.26 when open
-  const EAR_CLOSED_THRESHOLD = 0.22;
-  const EAR_OPEN_THRESHOLD = 0.26;
+  // Blink state machine: Adaptive EAR threshold
+  const EAR_CLOSED_THRESHOLD = 0.245;
+  const EAR_OPEN_THRESHOLD = 0.265;
   const isEyesClosedNow = avgEAR < EAR_CLOSED_THRESHOLD;
 
   let blinkCount = prevBlinkState?.blinkCount || 0;
@@ -144,10 +144,10 @@ export function extractLivenessMetrics(
   const pitchRatio = totalVert > 0 ? (distTop - distBottom) / totalVert : 0;
 
   let headPose: 'CENTER' | 'LEFT' | 'RIGHT' | 'UP' | 'DOWN' = 'CENTER';
-  if (yawRatio < -0.16) headPose = 'LEFT';
-  else if (yawRatio > 0.16) headPose = 'RIGHT';
-  else if (pitchRatio < -0.32) headPose = 'UP';
-  else if (pitchRatio > 0.18) headPose = 'DOWN';
+  if (yawRatio < -0.10) headPose = 'LEFT';
+  else if (yawRatio > 0.10) headPose = 'RIGHT';
+  else if (pitchRatio < -0.25) headPose = 'UP';
+  else if (pitchRatio > 0.15) headPose = 'DOWN';
 
   // Smile / Expression detection
   const smileScore = expressions ? (expressions.happy || 0) : 0;
@@ -177,27 +177,27 @@ export const CHALLENGE_CONFIG: Record<
 > = {
   BLINK_TWICE: {
     title: 'Blink Challenge',
-    instruction: 'Please blink your eyes naturally twice',
-    targetCount: 2,
-    timeLimitSeconds: 10,
+    instruction: 'Please blink your eyes naturally (1-2 times)',
+    targetCount: 1, // Single clear blink is sufficient & snappy
+    timeLimitSeconds: 25,
   },
   TURN_HEAD_LEFT: {
     title: 'Head Turn Challenge',
     instruction: 'Turn your head slightly to the left, then back',
     targetCount: 1,
-    timeLimitSeconds: 10,
+    timeLimitSeconds: 25,
   },
   TURN_HEAD_RIGHT: {
     title: 'Head Turn Challenge',
     instruction: 'Turn your head slightly to the right, then back',
     targetCount: 1,
-    timeLimitSeconds: 10,
+    timeLimitSeconds: 25,
   },
   SMILE: {
     title: 'Expression Challenge',
     instruction: 'Please give a natural smile to the camera',
     targetCount: 1,
-    timeLimitSeconds: 10,
+    timeLimitSeconds: 25,
   },
 };
 
@@ -293,8 +293,8 @@ export class LivenessEngine {
             this.currentCount = metrics.blinkCount;
             this.message =
               this.currentCount >= 1
-                ? 'Blink 1 more time...'
-                : 'Blink your eyes naturally (2 times)...';
+                ? 'Blink detected! Verifying...'
+                : 'Blink your eyes naturally...';
 
             if (this.currentCount >= this.targetCount) {
               this.status = 'PASSED';
@@ -304,11 +304,11 @@ export class LivenessEngine {
           }
 
           case 'TURN_HEAD_LEFT': {
-            if (metrics.yawRatio < -0.16) {
+            if (metrics.yawRatio < -0.09) {
               this.hasTurnedAway = true;
-              this.message = 'Great! Now return to center...';
+              this.message = 'Left turn detected! Now return to center...';
             }
-            if (this.hasTurnedAway && Math.abs(metrics.yawRatio) <= 0.08) {
+            if (this.hasTurnedAway && Math.abs(metrics.yawRatio) <= 0.10) {
               this.currentCount = 1;
               this.status = 'PASSED';
               this.message = 'Head turn verified!';
@@ -317,11 +317,11 @@ export class LivenessEngine {
           }
 
           case 'TURN_HEAD_RIGHT': {
-            if (metrics.yawRatio > 0.16) {
+            if (metrics.yawRatio > 0.09) {
               this.hasTurnedAway = true;
-              this.message = 'Great! Now return to center...';
+              this.message = 'Right turn detected! Now return to center...';
             }
-            if (this.hasTurnedAway && Math.abs(metrics.yawRatio) <= 0.08) {
+            if (this.hasTurnedAway && Math.abs(metrics.yawRatio) <= 0.10) {
               this.currentCount = 1;
               this.status = 'PASSED';
               this.message = 'Head turn verified!';
@@ -330,7 +330,7 @@ export class LivenessEngine {
           }
 
           case 'SMILE': {
-            if (metrics.smileScore > 0.60 || metrics.mouthAspectRatio > 0.28) {
+            if (metrics.smileScore > 0.35 || metrics.mouthAspectRatio > 0.22) {
               this.currentCount = 1;
               this.status = 'PASSED';
               this.message = 'Natural smile verified!';
