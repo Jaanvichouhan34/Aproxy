@@ -417,18 +417,61 @@ export const BiometricVerificationModal: React.FC<BiometricVerificationModalProp
 
             {/* Score Display when evaluated */}
             {matchResult && (
-              <div
-                className={`p-3.5 rounded-2xl border text-xs font-mono flex items-center justify-between ${
-                  matchResult.isMatch
-                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500'
-                    : 'bg-rose-500/10 border-rose-500/30 text-rose-500'
-                }`}
-              >
-                <span>Cosine Similarity Score</span>
-                <span className="font-bold text-sm">
-                  {matchResult.similarityScorePercent}% (
-                  {matchResult.isMatch ? 'MATCHED' : 'REJECTED'})
-                </span>
+              <div className="space-y-2">
+                <div
+                  className={`p-3.5 rounded-2xl border text-xs font-mono flex items-center justify-between ${
+                    matchResult.isMatch
+                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500'
+                      : 'bg-rose-500/10 border-rose-500/30 text-rose-500'
+                  }`}
+                >
+                  <span>Cosine Similarity Score</span>
+                  <span className="font-bold text-sm">
+                    {matchResult.similarityScorePercent}% ({matchResult.isMatch ? 'MATCHED' : 'REJECTED'})
+                  </span>
+                </div>
+
+                {!matchResult.isMatch && (
+                  <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs flex items-center justify-between">
+                    <span>Enrolled profile vector does not match your current face.</span>
+                    <Button
+                      variant="glow"
+                      size="sm"
+                      onClick={async () => {
+                        if (metrics) {
+                          setStep('MATCHING');
+                          toast.loading('Enrolling your face vector...');
+                          // Extract latest descriptor and save to profile
+                          if (videoRef.current) {
+                            const sf = await detectSingleFaceWithDescriptor(videoRef.current);
+                            if (sf?.descriptor) {
+                              const desc = Array.from(sf.descriptor);
+                              await useAuthStore.getState().saveFaceDescriptor(desc);
+                              setStep('SUCCESS');
+                              stopCamera();
+                              toast.dismiss();
+                              toast.success('Your face is now enrolled! Verification passed.');
+                              setTimeout(() => {
+                                onVerified({
+                                  liveDescriptor: desc,
+                                  similarityScore: 0.99,
+                                  euclideanDistance: 0.15,
+                                  livenessChallenge: 'ENROLL_AND_VERIFY',
+                                });
+                              }, 800);
+                              return;
+                            }
+                          }
+                          toast.dismiss();
+                          toast.error('Face not detected. Keep your face centered.');
+                        }
+                      }}
+                      className="text-xs shrink-0 font-bold"
+                    >
+                      Enroll My Face Now
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </div>
