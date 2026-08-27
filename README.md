@@ -27,58 +27,35 @@ Traditional QR-code attendance systems fail because students easily take screens
 
 ## 🖼️ System UI & Feature Gallery
 
-### 📊 Dashboard & System Views
-
 <table>
   <tr>
     <td width="33%" align="center">
-      <img src="docs/assets/2.png" alt="Preview 2" width="100%"/>
-      <br/>
-      <sub><b>Preview 2</b></sub>
+      <img src="docs/assets/2.png" alt="Aproxy Preview" width="100%"/>
     </td>
     <td width="33%" align="center">
-      <img src="docs/assets/3.png" alt="Preview 3" width="100%"/>
-      <br/>
-      <sub><b>Preview 3</b></sub>
+      <img src="docs/assets/3.png" alt="Aproxy Preview" width="100%"/>
     </td>
     <td width="33%" align="center">
-      <img src="docs/assets/5.png" alt="Preview 5" width="100%"/>
-      <br/>
-      <sub><b>Preview 5</b></sub>
+      <img src="docs/assets/5.png" alt="Aproxy Preview" width="100%"/>
     </td>
   </tr>
   <tr>
     <td width="33%" align="center">
-      <img src="docs/assets/teacher.png" alt="Teacher Dashboard 1" width="100%"/>
-      <br/>
-      <sub><b>Teacher Dashboard 1</b></sub>
+      <img src="docs/assets/teacher.png" alt="Aproxy Preview" width="100%"/>
     </td>
     <td width="33%" align="center">
-      <img src="docs/assets/teacher_2.png" alt="Teacher Dashboard 2" width="100%"/>
-      <br/>
-      <sub><b>Teacher Dashboard 2</b></sub>
+      <img src="docs/assets/teacher_2.png" alt="Aproxy Preview" width="100%"/>
     </td>
     <td width="33%" align="center">
-      <img src="docs/assets/8.png" alt="Preview 8" width="100%"/>
-      <br/>
-      <sub><b>Preview 8</b></sub>
+      <img src="docs/assets/8.png" alt="Aproxy Preview" width="100%"/>
     </td>
   </tr>
   <tr>
-    <td width="33%" align="center">
-      <img src="docs/assets/1.png" alt="Preview 1" width="100%"/>
-      <br/>
-      <sub><b>Preview 1</b></sub>
+    <td width="50%" align="center">
+      <img src="docs/assets/1.png" alt="Student Verification" width="100%"/>
     </td>
-    <td width="33%" align="center">
-      <img src="docs/assets/7.png" alt="Preview 7" width="100%"/>
-      <br/>
-      <sub><b>Preview 7</b></sub>
-    </td>
-    <td width="33%" align="center">
-      <img src="docs/assets/4.png" alt="Preview 4" width="100%"/>
-      <br/>
-      <sub><b>Preview 4</b></sub>
+    <td width="50%" align="center">
+      <img src="docs/assets/7.png" alt="Student Verification" width="100%"/>
     </td>
   </tr>
 </table>
@@ -205,7 +182,6 @@ Aproxy/
 │       ├── 1.png
 │       ├── 2.png
 │       ├── 3.png
-│       ├── 4.png
 │       ├── 5.png
 │       ├── 7.png
 │       ├── 8.png
