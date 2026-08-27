@@ -59,9 +59,9 @@ Traditional QR-code attendance systems fail because students easily take screens
       <sub><b>Security Architecture Deep-Dive</b></sub>
     </td>
     <td width="33%" align="center">
-      <img src="docs/assets/security_threat_matrix.jpg" alt="Anti-Proxy Security Matrix" width="100%"/>
+      <img src="docs/assets/5.png" alt="Anti-Proxy Security Analytics" width="100%"/>
       <br/>
-      <sub><b>Anti-Proxy Threat Matrix</b></sub>
+      <sub><b>Anti-Proxy Security Analytics</b></sub>
     </td>
   </tr>
 </table>
