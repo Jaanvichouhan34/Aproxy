@@ -25,16 +25,56 @@ Traditional QR-code attendance systems fail because students easily take screens
 
 ---
 
-## 🖼️ System UI Gallery & Visual Previews
+## 🖼️ System UI & Feature Gallery
 
-### 1. Teacher Live Command Center & Ephemeral QR Broadcaster
-![Teacher Command Center](docs/assets/teacher_dashboard.jpg)
+### 📊 Dashboard & Command Center Views (3 Per Row Layout)
 
-### 2. Student Biometric Verification & 3D Mesh Scanner
-![Student Verification Portal](docs/assets/student_verification.jpg)
+<table>
+  <tr>
+    <td width="33%" align="center">
+      <img src="docs/assets/teacher.png" alt="Teacher Overview Dashboard" width="100%"/>
+      <br/>
+      <sub><b>Teacher Overview Dashboard</b></sub>
+    </td>
+    <td width="33%" align="center">
+      <img src="docs/assets/teacher_2.png" alt="Teacher Live Roster & Analytics" width="100%"/>
+      <br/>
+      <sub><b>Live Roster & Analytics</b></sub>
+    </td>
+    <td width="33%" align="center">
+      <img src="docs/assets/3.png" alt="Smart Timetable & Class Schedule" width="100%"/>
+      <br/>
+      <sub><b>Smart Timetable Engine</b></sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="33%" align="center">
+      <img src="docs/assets/2.png" alt="Student Attendance Hub" width="100%"/>
+      <br/>
+      <sub><b>Student Attendance Hub</b></sub>
+    </td>
+    <td width="33%" align="center">
+      <img src="docs/assets/4.png" alt="Security Architecture Deep-Dive" width="100%"/>
+      <br/>
+      <sub><b>Security Architecture Deep-Dive</b></sub>
+    </td>
+    <td width="33%" align="center">
+      <img src="docs/assets/security_threat_matrix.jpg" alt="Anti-Proxy Security Matrix" width="100%"/>
+      <br/>
+      <sub><b>Anti-Proxy Threat Matrix</b></sub>
+    </td>
+  </tr>
+</table>
 
-### 3. Anti-Proxy Threat Defense & Security Matrix
-![Security Threat Matrix](docs/assets/security_threat_matrix.jpg)
+<br/>
+
+### 📱 Student Verification & Camera Scanner (Compact View)
+
+<p align="center">
+  <img src="docs/assets/1.png" alt="Student Biometric Verification & Camera Scanner" width="380" style="border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);" />
+  <br/>
+  <sub><b>Student Live Face ID Verification & Dynamic QR Scanner</b></sub>
+</p>
 
 ---
 
@@ -155,8 +195,12 @@ Traditional QR-code attendance systems fail because students easily take screens
 Aproxy/
 ├── docs/                         # Project Documentation & Screenshots
 │   └── assets/                   # System Screenshots & UI Mockups
-│       ├── teacher_dashboard.jpg
-│       ├── student_verification.jpg
+│       ├── 1.png                 # Student Verification (Compact Mobile View)
+│       ├── 2.png                 # Student Attendance Hub
+│       ├── 3.png                 # Smart Timetable Engine
+│       ├── 4.png                 # Security Architecture Deep-Dive
+│       ├── teacher.png           # Teacher Overview Dashboard
+│       ├── teacher_2.png         # Live Roster & Analytics
 │       └── security_threat_matrix.jpg
 ├── server/                       # Express Backend Service
 │   ├── src/
@@ -176,17 +220,7 @@ Aproxy/
 │   └── .env.example
 ├── src/                          # Vite + React Frontend Client
 │   ├── components/               # UI Components
-│   │   ├── attendance/           # Dynamic QR Broadcaster, Command Center, Overrides
-│   │   ├── auth/                 # Login & Registration Modals
-│   │   ├── biometrics/           # Face Enrollment & Liveness Check Components
-│   │   ├── dashboard/            # Teacher & Student Sidebar / Navigation Layouts
-│   │   └── timetable/            # Schedule Builder & Conflict Viewers
 │   ├── pages/                    # Multi-Role Application Views
-│   │   ├── teacher/              # Live Sessions, Analytics, Roster, History, Settings
-│   │   ├── student/              # Face ID Verification, Scanner, Overview, Stats
-│   │   ├── AuthPage.tsx          # Unified Authentication Portal
-│   │   ├── ArchitecturePage.tsx  # Interactive Security Architecture View
-│   │   └── DemoPage.tsx          # Interactive System Walkthrough
 │   ├── services/                 # Axios HTTP & Socket.IO Client API Services
 │   ├── store/                    # Zustand Global App State Stores
 │   ├── types/                    # Shared TypeScript Interface Definitions
